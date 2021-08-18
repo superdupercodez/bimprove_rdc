@@ -1,0 +1,17 @@
+<p><span style="font-family: arial, helvetica, sans-serif;">GET!?!</span></p>
+<p><span style="font-family: arial, helvetica, sans-serif;">You're not supposed to be here doing this in here!</span></p>
+<p><span style="font-family: arial, helvetica, sans-serif;">Instead, you should do POST to this same URL (<a href="{{full_url}}">{{full_url}}</a>) with your image attached. If things workout, for example following kind of JSON will be returned for the image attached below:</span></p>
+<p><span style="font-family: 'courier new', courier, monospace;">[{'class': 0,</span><br /><span style="font-family: 'courier new', courier, monospace;">&nbsp; 'confidence': 0.3176967502,</span><br /><span style="font-family: 'courier new', courier, monospace;">&nbsp; 'name': 'barrier',</span><br /><span style="font-family: 'courier new', courier, monospace;">&nbsp; 'xmax': 874.7608032227,</span><br /><span style="font-family: 'courier new', courier, monospace;">&nbsp; 'xmin': 0.0,</span><br /><span style="font-family: 'courier new', courier, monospace;">&nbsp; 'ymax': 521.9098510742,</span><br /><span style="font-family: 'courier new', courier, monospace;">&nbsp; 'ymin': 77.8828277588},</span><span style="font-family: 'courier new', courier, monospace;">}</span></p>
+<p><span style="font-family: 'courier new', courier, monospace;">]</span></p>
+<p></p>
+<p>The returned JSON structure may contain an array of detected objects and their respective bounding box parameters. In here</p>
+<p><span style="font-family: 'courier new', courier, monospace;">class -&nbsp;<span style="font-family: 'andale mono', monospace;">Detected object class index</span>&nbsp;</span></p>
+<p><span style="font-family: 'courier new', courier, monospace;">confidence -&nbsp;<span style="font-family: 'andale mono', monospace;">0.0 - 1.0, confidence points of object detection</span>&nbsp;</span></p>
+<p><span style="font-family: 'courier new', courier, monospace;">name - <span style="font-family: 'andale mono', monospace;">Detected object class name</span></span></p>
+<p><span style="font-family: 'courier new', courier, monospace;">xmax - <span style="font-family: 'andale mono', monospace;">Bounding box right corners' x coordinates on original image pixel space</span></span></p>
+<p><span style="font-family: 'courier new', courier, monospace;">xmin - <span style="font-family: 'andale mono', monospace;">Bounding box left corners' x coordinates on original image pixel space</span></span></p>
+<p><span style="font-family: 'courier new', courier, monospace;">ymax - <span style="font-family: 'andale mono', monospace;">Bounding box bottom corners' y coordinates on original image pixel space</span></span></p>
+<p><span style="font-family: 'courier new', courier, monospace;">ymin - <span style="font-family: 'andale mono', monospace;">Bounding box upper corners' y coordinates on original image pixel space</span></span></p>
+<p></p>
+<p>See image below (zoom in if needed, it is on upper left) for visual presentation of the returned parameters.</p>
+<p><img src="/static/IMG_2199_example.JPG" width="640" height="640" alt="Example" /></p>
