@@ -1,8 +1,0 @@
-1. Python watchdog triggers -> 1. yolov5 detection
-							   2. image_bb with bounding boxes generated
-							   3. image_bb moved to processed images
-							   4. orig. image moved to processed_images
-							   5. sharing activated for both
-							   6. bounding box info and links to orig image and image_bb submitted to ontology
-							   
-							   

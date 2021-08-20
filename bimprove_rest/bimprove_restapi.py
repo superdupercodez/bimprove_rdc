@@ -21,7 +21,7 @@ def predict():
     if request.files.get("image"):
         image_file = request.files["image"]
         image_bytes = image_file.read()
-        img = Image.open(io.BytesIO(image_bytes))  
+        img = Image.open(io.BytesIO(image_bytes))
         results = model(img, size=640)  # reduce size=320 for faster inference
         return results.pandas().xyxy[0].to_json(orient="records")
 
@@ -35,7 +35,6 @@ def give_static_file(imgname):
         return send_file(f'static/{imgname}')
     except FileNotFoundError:
         abort(404)
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Flask API exposing YOLOv5 model")
