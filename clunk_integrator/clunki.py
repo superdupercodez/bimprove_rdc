@@ -18,51 +18,58 @@ class Clunki():
             'disable_check': True
         }
         self.os_incoming_path = '/var/cells/data/bimprove/incoming'
+        self.os_processed_path = '/var/cells/data/bimprove/processed'
+        self.os_temp_file_path = '/tmp'
         self.webdav_incoming_path = 'bimprove-image-storage/incoming'
         self.webdav_processed_path = 'bimprove-image-storage/processed'
+        self.webdav_temp_path = 'bimprove-image-storage/temp'
 
-    def insert_to_risk_db(self, detections, orig_file_url, bb_file_url):
+    def insert_to_risk_db(self, file, fule):
         pass
 
     def add_bounding_box_to_img(self, os_file_path, detections):
         img = Image.open(os_file_path)
-        file_name = os_file_path.strip(self.os_incoming_path+'/')
-        path_name = os_file_path.strip(file_name)
+        base_file_name = os_file_path.replace(self.os_incoming_path+'/', '')
         width, height = img.size
         font = ImageFont.truetype("Gidole-Regular.ttf", size=int(height/40))
-        for detection in detections:
-            draw = ImageDraw.Draw(img)
-            coords = ((detection['xmin'], detection['ymin']), (detection['xmax'], detection['ymax']))
-            draw.rectangle(coords, outline ="yellow", width=30)
-            label_text = detection['name'] + ' conf:' + str(detection['confidence'])
-            label_box = draw.textsize(label_text, font)
-            draw.rectangle(((coords[0][0], coords[0][1]),(coords[0][0] + label_box[0] +5, coords[0][1] + label_box[1] + 5)), outline="yellow", fill="yellow", width=10)
-            draw.text(coords[0], label_text, (0,0,0), font=font)
         if len(detections) > 0:
-           new_file_name = path_name + "bbxes_"+file_name
-           img.save(new_file_name, "JPEG")
-           return new_file_name
+            for detection in detections:
+                draw = ImageDraw.Draw(img)
+                coords = ((detection['xmin'], detection['ymin']), (detection['xmax'], detection['ymax']))
+                draw.rectangle(coords, outline ="yellow", width=30)
+                label_text = detection['name'] + ' conf:' + str(detection['confidence'])
+                label_box = draw.textsize(label_text, font)
+                draw.rectangle(((coords[0][0], coords[0][1]),(coords[0][0] + label_box[0] +5, coords[0][1] + label_box[1] + 5)), outline="yellow", fill="yellow", width=10)
+                draw.text(coords[0], label_text, (0,0,0), font=font)
+            new_full_file_name = self.os_temp_file_path + '/bbxes_' + base_file_name
+            img.save(new_full_file_name, "JPEG")
+            return new_full_file_name
         return None
 
-    def move_files(self, os_file_path):
+    def move_files(self, file_os_path, new_file_os_path):
         #Extract file name from the OS file path
-        file_name = os_file_path.strip(self.os_incoming_path+'/')
-        if len(file_name) > 0:
+        file_name = file_os_path.replace(self.os_incoming_path+'/', '')
+        new_file_name = new_file_os_path.replace(self.os_temp_file_path+'/', '')
+        if len(file_name) > 0 and len(new_file_name) > 0:
             client=Client(self.dav_options)
             client.verify=False
-            print(self.dav_options)
-            print(client.list())
             if file_name in client.list(self.webdav_incoming_path):
-                client.move(remote_path_from=self.webdav_incoming_path+'/'+file_name, remote_path_to=self.webdav_processed_path+'/'+file_name)
+                #Just copy the file, i.e. let pydio manage duplicate files and their naming..BWAHAH
+                client.copy(remote_path_from=self.webdav_incoming_path+'/'+file_name, remote_path_to=self.webdav_processed_path+'/'+file_name)
+                #'Uploade' file from local temp to webdav temp - uploading there manages sharing and caring automatically
+            client.upload_sync(local_path=new_file_os_path, remote_path=self.webdav_temp_path+'/'+new_file_name)
+            #Move file from webdav temp to processed folder shared
+            if new_file_name in client.list(self.webdav_temp_path):
+                #client.move(remote_path_from=self.webdav_temp_path+'/'+new_file_name, remote_path_to=self.webdav_processed_path+'/'+new_file_name)
+                client.move(remote_path_from=self.webdav_temp_path+'/'+new_file_name, remote_path_to=self.webdav_processed_path+'/'+new_file_name)
 
     def do_inference(self, file_path):
         image_data = open(file_path, "rb").read()
         response = requests.post(self._detection_service_url, files={"image": image_data})
         if len(response.json()) > 0:
-            new_f = self.add_bounding_box_to_img(file_path, response.json)
+            new_temp_file_and_path = self.add_bounding_box_to_img(file_path, response.json())
             pprint.pprint(response.json())
-            print(new_f)
-            #self.move_files(file_path)
+            self.move_files(file_path, new_temp_file_and_path)
 
     def on_created(self, event): # when file is created
         print("Got event for file %s" %event.src_path)
