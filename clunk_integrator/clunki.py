@@ -64,6 +64,9 @@ class Clunki():
                 break
         if result.status_code == 200:
             return result.json()['Node']['Uuid']
+        else:
+            print(result)
+            print(result.text)
         return None
 
     def insert_to_risk_db(self, file_name, new_file_name, detections):
@@ -84,6 +87,8 @@ class Clunki():
                 resp = requests.post(self.fuseki_db_url, verify=False, json=_json_content, headers=_header)
                 if resp.status_code != 200:
                     print(f"Insertion to FUSEKI failed with {resp.status_code}:{resp.text}")
+                else:
+                    print(f"Insertion to FUSEKI succeedes(?) with {resp.status_code}:{resp.text}")
 
     def add_bounding_box_to_img(self, os_file_path, detections):
         img = Image.open(os_file_path)
@@ -115,12 +120,14 @@ class Clunki():
                 #Just copy the file, i.e. let pydio manage duplicate files and their naming..BWAHAH
                 client.copy(remote_path_from=self.webdav_incoming_path+'/'+file_name, remote_path_to=self.webdav_processed_path+'/'+file_name)
                 #'Uploade' file from local temp to webdav temp - uploading there manages sharing and caring automatically
-            client.upload_sync(local_path=new_file_os_path, remote_path=self.webdav_temp_path+'/'+new_file_name)
+            #client.upload_sync(local_path=new_file_os_path, remote_path=self.webdav_temp_path+'/'+new_file_name)
+            client.upload_sync(local_path=new_file_os_path, remote_path=self.webdav_processed_path+"/"+new_file_name)
+            return file_name, new_file_name
             #Move file from webdav temp to processed folder shared
-            if new_file_name in client.list(self.webdav_temp_path):
-                #client.move(remote_path_from=self.webdav_temp_path+'/'+new_file_name, remote_path_to=self.webdav_processed_path+'/'+new_file_name)
-                client.move(remote_path_from=self.webdav_temp_path+'/'+new_file_name, remote_path_to=self.webdav_processed_path+'/'+new_file_name)
-                return file_name, new_file_name
+            #if new_file_name in client.list(self.webdav_temp_path):
+            #    #client.move(remote_path_from=self.webdav_temp_path+'/'+new_file_name, remote_path_to=self.webdav_processed_path+'/'+new_file_name)
+            #    client.move(remote_path_from=self.webdav_temp_path+'/'+new_file_name, remote_path_to=self.webdav_processed_path+'/'+new_file_name)
+            #    return file_name, new_file_name
         return None, None
 
     def do_inference(self, file_path):
