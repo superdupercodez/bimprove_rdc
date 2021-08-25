@@ -25,6 +25,7 @@ class Clunki():
         self.webdav_incoming_path = 'bimprove-image-storage/incoming'
         self.webdav_processed_path = 'bimprove-image-storage/processed'
         self.webdav_temp_path = 'bimprove-image-storage/temp'
+        self.webdav_nodetections_path = 'bimprove-image-storage/nodetections'
 
         self.jwt_expiresat = time.time()
 
@@ -118,7 +119,7 @@ class Clunki():
             client.verify=False
             if file_name in client.list(self.webdav_incoming_path):
                 #Just copy the file, i.e. let pydio manage duplicate files and their naming..BWAHAH
-                client.copy(remote_path_from=self.webdav_incoming_path+'/'+file_name, remote_path_to=self.webdav_processed_path+'/'+file_name)
+                client.move(remote_path_from=self.webdav_incoming_path+'/'+file_name, remote_path_to=self.webdav_processed_path+'/'+file_name)
                 #'Uploade' file from local temp to webdav temp - uploading there manages sharing and caring automatically
             #client.upload_sync(local_path=new_file_os_path, remote_path=self.webdav_temp_path+'/'+new_file_name)
             client.upload_sync(local_path=new_file_os_path, remote_path=self.webdav_processed_path+"/"+new_file_name)
@@ -139,6 +140,13 @@ class Clunki():
             file_name, new_file_name = self.move_files(file_path, new_temp_file_and_path)
             if file_name is not None and new_file_name is not None and detections is not None:
                 self.insert_to_risk_db(file_name, new_file_name, detections)
+        #No detections - move to nodetections -folder
+        else:
+            client=Client(self.dav_options)
+            client.verify=False
+            file_name = file_path.replace(self.os_incoming_path+'/', '')
+            timex = str(int(time.time()))
+            client.move(remote_path_from=self.webdav_incoming_path+'/'+file_name, remote_path_to=self.webdav_nodetections_path+'/'+timex+'_'+file_name)
 
     def on_created(self, event): # when file is created
         print("Got event for file %s" %event.src_path)
