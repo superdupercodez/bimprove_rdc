@@ -75,15 +75,15 @@ class Clunki():
         if uuid is not None:
             _header = {'Content-Type': 'text/plain'}
             for detection in detections:
-                _json_content = {"imageID": uuid,
-                                 "name":detection['name'],
-                                 "confidence": str(detection['confidence']),
-                                 "xmax": str(detection['xmax']),
-                                 "xmin": str(detection['xmin']),
-                                 "ymax": str(detection['ymax']),
-                                 "ymin": str(detection['ymin']),
-                                 "imageURL": "https://fasolt4.willab.fi:8883/public/943468967f2b",
-                                 "anchorBoxImageURL": "https://fasolt4.willab.fi:8883/public/943468967f2b"}
+                _json_content = {'imageID': uuid,
+                                 'name': detection['name'],
+                                 'confidence': str(detection['confidence']),
+                                 'xmax': str(detection['xmax']),
+                                 'xmin': str(detection['xmin']),
+                                 'ymax': str(detection['ymax']),
+                                 'ymin': str(detection['ymin']),
+                                 'imageURL': str('https://fasolt4.willab.fi:8883/public/943468967f2b'),
+                                 'anchorBoxImageURL': str('https://fasolt4.willab.fi:8883/public/943468967f2b')}
                 print(_json_content)
                 resp = requests.post(self.fuseki_db_url, verify=False, json=_json_content, headers=_header)
                 if resp.status_code != 200:
