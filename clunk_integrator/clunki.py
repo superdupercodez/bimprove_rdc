@@ -43,7 +43,7 @@ class Clunki():
         login_data =  {'AuthInfo': {'login': user, 'password': password, 'type': 'credentials'}}
         r = client.post("https://"+self.service_host+':8883/a/frontend/session', json=login_data, verify=False, headers=pydio_auth_req_header)
         # a valid JWT token should be found in the returned JSON object ...
-        jwt_token = r.json()['JWT']        
+        jwt_token = r.json()['JWT']
         self.jwt_expiresat = int(r.json()['Token']['ExpiresAt'])
         # Add this to headers
         self.pydio_auth_headers = {}
@@ -62,6 +62,7 @@ class Clunki():
             trials+= 1
             if trials > 5:
                 break
+            time.sleep(trials)
         if result.status_code == 200:
             return result.json()['Node']['Uuid']
         else:
@@ -74,13 +75,15 @@ class Clunki():
         if self.jwt_expiresat <= time.time():
             self._auth_with_pydio()
         #Create share
+        time.sleep(2)
         result = requests.put("https://"+self.service_host+":8883/a/share/link", json=share_params, verify=False, headers=self.pydio_auth_headers)
         trials = 0
         while result.status_code != 200:
             result = requests.put("https://"+self.service_host+":8883/a/share/link", json=share_params, verify=False, headers=self.pydio_auth_headers)
-            trials+= 1
+            trials+=1
             if trials > 5:
                 return None
+            time.sleep(trials)
         if result.status_code == 200:
             return result.json()['LinkUrl']
         else:
@@ -93,8 +96,10 @@ class Clunki():
         nf_uuid = self._find_file_id(new_file_name)
 
         if uuid is not None:
+            print(f"Creating share for original file {file_name}------------------------------------------")
             file_share_url = self.create_share(file_name, uuid)
         if nf_uuid is not None:
+            print(f"Creating share for the bbox image file {new_file_name}-------------------------------------")
             new_file_share_url = self.create_share(new_file_name, nf_uuid)
 
         if uuid is not None and nf_uuid is not None:
@@ -103,12 +108,12 @@ class Clunki():
             full_new_imgUrl = full_imgUrl
 
             if file_share_url is not None:
-                full_imgUrl = str(self.service_host+':8883'+file_share_url)
+                full_imgUrl = str('https://'+self.service_host+':8883'+file_share_url)
             if new_file_share_url is not None:
-                full_new_imgUrl = str(self.service_host+':8883'+new_file_share_url)
+                full_new_imgUrl = str('https://'+self.service_host+':8883'+new_file_share_url)
 
             for detection in detections:
-                _json_content = {'imageID': uuid,
+                _json_content = {'imageID': str(file_name + "_" +uuid),
                                  'name': detection['name'],
                                  'confidence': str(detection['confidence']),
                                  'xmax': str(detection['xmax']),
@@ -147,21 +152,21 @@ class Clunki():
         #Extract file name from the OS file path
         file_name = file_os_path.replace(self.os_incoming_path+'/', '')
         new_file_name = new_file_os_path.replace(self.os_temp_file_path+'/', '')
+        pyd_file_name = None
+        pyd_new_file_name = None
+        timex = str(int(time.time()))
         if len(file_name) > 0 and len(new_file_name) > 0:
             client=Client(self.dav_options)
             client.verify=False
             if file_name in client.list(self.webdav_incoming_path):
-                #Just copy the file, i.e. let pydio manage duplicate files and their naming..BWAHAH
-                client.move(remote_path_from=self.webdav_incoming_path+'/'+file_name, remote_path_to=self.webdav_processed_path+'/'+file_name)
-                #'Uploade' file from local temp to webdav temp - uploading there manages sharing and caring automatically
-            #client.upload_sync(local_path=new_file_os_path, remote_path=self.webdav_temp_path+'/'+new_file_name)
-            client.upload_sync(local_path=new_file_os_path, remote_path=self.webdav_processed_path+"/"+new_file_name)
-            return file_name, new_file_name
-            #Move file from webdav temp to processed folder shared
-            #if new_file_name in client.list(self.webdav_temp_path):
-            #    #client.move(remote_path_from=self.webdav_temp_path+'/'+new_file_name, remote_path_to=self.webdav_processed_path+'/'+new_file_name)
-            #    client.move(remote_path_from=self.webdav_temp_path+'/'+new_file_name, remote_path_to=self.webdav_processed_path+'/'+new_file_name)
-            #    return file_name, new_file_name
+                pyd_file_name = timex + "_" + file_name
+                print(f"Moving the original file from incoming to processed {file_name}, new file name {pyd_file_name}")
+                client.move(remote_path_from=self.webdav_incoming_path+'/'+file_name, remote_path_to=self.webdav_processed_path+'/'+pyd_file_name)
+            pyd_new_file_name = timex + "_" + new_file_name
+            print(f"Uploading the bounding box image version from {new_file_os_path} to procssed as {pyd_file_name}")
+            client.upload_sync(local_path=new_file_os_path, remote_path=self.webdav_processed_path+"/"+pyd_new_file_name)
+            #Delete files from tmp?
+            return pyd_file_name, pyd_new_file_name
         return None, None
 
     def do_inference(self, file_path):
@@ -189,14 +194,17 @@ class Clunki():
             self.do_inference(event.src_path)
 
     def start_file_observer(self):
+        print("clink..")
         self.observer = Observer()
         self.event_handler = FileSystemEventHandler()
         self.event_handler.on_created = self.on_created
         self.observer.schedule(self.event_handler, path=self.os_incoming_path)
         self.observer.start()
+        print("..clonk")
 
 if __name__ == "__main__":
     clunk = Clunki()
+    print("Clunketi clunk..")
     clunk.start_file_observer()
     try:
         while True:
