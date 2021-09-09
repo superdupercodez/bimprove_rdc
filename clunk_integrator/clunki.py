@@ -43,8 +43,7 @@ class Clunki():
         login_data =  {'AuthInfo': {'login': user, 'password': password, 'type': 'credentials'}}
         r = client.post("https://"+self.service_host+':8883/a/frontend/session', json=login_data, verify=False, headers=pydio_auth_req_header)
         # a valid JWT token should be found in the returned JSON object ...
-        jwt_token = r.json()['JWT']
-        jwt_expire = r.json()['ExpireTime']  # in seconds
+        jwt_token = r.json()['JWT']        
         self.jwt_expiresat = int(r.json()['Token']['ExpiresAt'])
         # Add this to headers
         self.pydio_auth_headers = {}
@@ -70,8 +69,34 @@ class Clunki():
             print(result.text)
         return None
 
+    def create_share(self, file_label, file_uuid):
+        share_params = { 'ShareLink' : {'Label': filelabel, 'Permissions': ['Preview', 'Download'], 'ViewTemplateName': 'pydio_unique_strip', 'RootNodes' : [{'Uuid' : file_uuid}]} }
+        if self.jwt_expiresat <= time.time():
+            self._auth_with_pydio()
+        #Create share
+        result = requests.put(domain+"/a/share/link", json=share_params, verify=False, headers=self.pydio_auth_headers)
+        trials = 0
+        while result.status_code != 200:
+            result = requests.put(domain+"/a/share/link", json=share_params, verify=False, headers=self.pydio_auth_headers)
+            trials+= 1
+            if trials > 5:
+                return None
+        if result.status_code == 200:
+            return "OK"
+        else:
+            print(result)
+            print(result.text)
+        return None
+
     def insert_to_risk_db(self, file_name, new_file_name, detections):
         uuid = self._find_file_id(file_name)
+        nf_uuid = self._find_file_id(new_file_name)
+        
+        if uuid is not None:
+            self.create_share(file_name, uuid)
+        if nf_uuid is not None:
+            self.create_share(new_file_name, nf_uuid)    
+        
         if uuid is not None:
             _header = {'Content-Type': 'text/plain'}
             for detection in detections:
