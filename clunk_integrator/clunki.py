@@ -70,19 +70,19 @@ class Clunki():
         return None
 
     def create_share(self, file_label, file_uuid):
-        share_params = { 'ShareLink' : {'Label': filelabel, 'Permissions': ['Preview', 'Download'], 'ViewTemplateName': 'pydio_unique_strip', 'RootNodes' : [{'Uuid' : file_uuid}]} }
+        share_params = { 'ShareLink' : {'Label': file_label, 'Permissions': ['Preview', 'Download'], 'ViewTemplateName': 'pydio_unique_strip', 'RootNodes' : [{'Uuid' : file_uuid}]} }
         if self.jwt_expiresat <= time.time():
             self._auth_with_pydio()
         #Create share
-        result = requests.put(domain+"/a/share/link", json=share_params, verify=False, headers=self.pydio_auth_headers)
+        result = requests.put("https://"+self.service_host+":8883/a/share/link", json=share_params, verify=False, headers=self.pydio_auth_headers)
         trials = 0
         while result.status_code != 200:
-            result = requests.put(domain+"/a/share/link", json=share_params, verify=False, headers=self.pydio_auth_headers)
+            result = requests.put("https://"+self.service_host+":8883/a/share/link", json=share_params, verify=False, headers=self.pydio_auth_headers)
             trials+= 1
             if trials > 5:
                 return None
         if result.status_code == 200:
-            return "OK"
+            return result.json()['LinkUrl']
         else:
             print(result)
             print(result.text)
@@ -91,14 +91,22 @@ class Clunki():
     def insert_to_risk_db(self, file_name, new_file_name, detections):
         uuid = self._find_file_id(file_name)
         nf_uuid = self._find_file_id(new_file_name)
-        
+
         if uuid is not None:
-            self.create_share(file_name, uuid)
+            file_share_url = self.create_share(file_name, uuid)
         if nf_uuid is not None:
-            self.create_share(new_file_name, nf_uuid)    
-        
-        if uuid is not None:
+            new_file_share_url = self.create_share(new_file_name, nf_uuid)
+
+        if uuid is not None and nf_uuid is not None:
             _header = {'Content-Type': 'text/plain'}
+            full_imgUrl = str("https://fasolt4.willab.fi:8883/public/943468967f2b")
+            full_new_imgUrl = full_imgUrl
+
+            if file_share_url is not None:
+                full_imgUrl = str(self.service_host+':8883'+file_share_url)
+            if new_file_share_url is not None:
+                full_new_imgUrl = str(self.service_host+':8883'+new_file_share_url)
+
             for detection in detections:
                 _json_content = {'imageID': uuid,
                                  'name': detection['name'],
@@ -107,8 +115,8 @@ class Clunki():
                                  'xmin': str(detection['xmin']),
                                  'ymax': str(detection['ymax']),
                                  'ymin': str(detection['ymin']),
-                                 'imageURL': str('https://fasolt4.willab.fi:8883/public/943468967f2b'),
-                                 'anchorBoxImageURL': str('https://fasolt4.willab.fi:8883/public/943468967f2b')}
+                                 'imageURL': full_imgUrl,
+                                 'anchorBoxImageURL': full_new_imgUrl}
                 print(_json_content)
                 resp = requests.post(self.fuseki_db_url, verify=False, json=_json_content, headers=_header)
                 if resp.status_code != 200:
