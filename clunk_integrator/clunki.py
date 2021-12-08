@@ -1,4 +1,7 @@
 import time
+import os
+import subprocess
+import glob
 import pprint
 import requests
 from watchdog.observers import Observer
@@ -17,6 +20,7 @@ class Clunki():
             'webdav_hostname': self._file_storage_url,
             'webdav_login':    "bimuser",
             'webdav_password': "bimproveK0ukku55",
+            'verbose' : True,
             'disable_check': True
         }
         self.os_incoming_path = '/var/cells/data/bimprove/incoming'
@@ -55,10 +59,10 @@ class Clunki():
     def _find_file_id(self, file_name):
         if self.jwt_expiresat <= time.time():
             self._auth_with_pydio()
-        result = requests.get("https://"+self.service_host+":8883/a/tree/stat/bimprove-image-storage/processed/"+file_name, verify=False, headers=self.pydio_auth_headers)
+        result = requests.get("http://"+self.service_host+":8883/a/tree/stat/bimprove-image-storage/processed/"+file_name, verify=False, headers=self.pydio_auth_headers)
         trials = 0
         while result.status_code != 200:
-            result = requests.get("https://"+self.service_host+":8883/a/tree/stat/bimprove-image-storage/processed/"+file_name, verify=False, headers=self.pydio_auth_headers)
+            result = requests.get("http://"+self.service_host+":8883/a/tree/stat/bimprove-image-storage/processed/"+file_name, verify=False, headers=self.pydio_auth_headers)
             trials+= 1
             if trials > 5:
                 break
@@ -76,10 +80,10 @@ class Clunki():
             self._auth_with_pydio()
         #Create share
         time.sleep(2)
-        result = requests.put("https://"+self.service_host+":8883/a/share/link", json=share_params, verify=False, headers=self.pydio_auth_headers)
+        result = requests.put("http://"+self.service_host+":8883/a/share/link", json=share_params, verify=False, headers=self.pydio_auth_headers)
         trials = 0
         while result.status_code != 200:
-            result = requests.put("https://"+self.service_host+":8883/a/share/link", json=share_params, verify=False, headers=self.pydio_auth_headers)
+            result = requests.put("http://"+self.service_host+":8883/a/share/link", json=share_params, verify=False, headers=self.pydio_auth_headers)
             trials+=1
             if trials > 5:
                 return None
@@ -104,13 +108,13 @@ class Clunki():
 
         if uuid is not None and nf_uuid is not None:
             _header = {'Content-Type': 'text/plain'}
-            full_imgUrl = str("https://fasolt4.willab.fi:8883/public/943468967f2b")
+            full_imgUrl = str("http://fasolt4.willab.fi:8883/public/943468967f2b")
             full_new_imgUrl = full_imgUrl
 
             if file_share_url is not None:
-                full_imgUrl = str('https://'+self.service_host+':8883'+file_share_url)
+                full_imgUrl = str('http://'+self.service_host+':8883'+file_share_url)
             if new_file_share_url is not None:
-                full_new_imgUrl = str('https://'+self.service_host+':8883'+new_file_share_url)
+                full_new_imgUrl = str('http://'+self.service_host+':8883'+new_file_share_url)
 
             for detection in detections:
                 _json_content = {'imageID': str(file_name + "_" +uuid),
@@ -144,9 +148,17 @@ class Clunki():
                 draw.rectangle(((coords[0][0], coords[0][1]),(coords[0][0] + label_box[0] +5, coords[0][1] + label_box[1] + 5)), outline="yellow", fill="yellow", width=10)
                 draw.text(coords[0], label_text, (0,0,0), font=font)
             new_full_file_name = self.os_temp_file_path + '/bbxes_' + base_file_name
-            img.save(new_full_file_name, "JPEG")
+            print(f"Saving {os_file_path} as new image file {new_full_file_name} - basefile name is {base_file_name}")
+            #img.save(new_full_file_name, "JPEG")
+            img.save(new_full_file_name)
             return new_full_file_name, detections
         return None, None
+
+    def sync_pydio(self):
+        print("Trying to sync pydio thingy")
+        pwd='429Memfw'
+        cmd='docker exec a4a93170a819 cells admin resync --datasource=bimprove'
+        subprocess.call('echo {} | sudo -S {}'.format(pwd,cmd), shell=True)
 
     def move_files(self, file_os_path, new_file_os_path):
         #Extract file name from the OS file path
@@ -155,6 +167,7 @@ class Clunki():
         pyd_file_name = None
         pyd_new_file_name = None
         timex = str(int(time.time()))
+        print(f"Trying to move {file_os_path} and {new_file_os_path}: {file_name} and {new_file_name}")
         if len(file_name) > 0 and len(new_file_name) > 0:
             client=Client(self.dav_options)
             client.verify=False
@@ -162,16 +175,28 @@ class Clunki():
                 pyd_file_name = timex + "_" + file_name
                 print(f"Moving the original file from incoming to processed {file_name}, new file name {pyd_file_name}")
                 client.move(remote_path_from=self.webdav_incoming_path+'/'+file_name, remote_path_to=self.webdav_processed_path+'/'+pyd_file_name)
+            else:
+                print(f"TILT file {file_name} not found")
             pyd_new_file_name = timex + "_" + new_file_name
-            print(f"Uploading the bounding box image version from {new_file_os_path} to procssed as {pyd_file_name}")
-            client.upload_sync(local_path=new_file_os_path, remote_path=self.webdav_processed_path+"/"+pyd_new_file_name)
-            #Delete files from tmp?
-            return pyd_file_name, pyd_new_file_name
+            print(f"Uploading the bounding box image version from {new_file_os_path} to procssed as {pyd_new_file_name}")
+            if os.path.exists(new_file_os_path):
+                print("File found from tmp to be moved")
+                client.upload_sync(local_path=new_file_os_path, remote_path=self.webdav_processed_path+"/"+pyd_new_file_name)
+                print("File upload from tmp done")
+                #Delete files from tmp
+                os.remove(new_file_os_path)
+                self.sync_pydio()
+                return pyd_file_name, pyd_new_file_name
+            self.sync_pydio()
+            return pyd_file_name, None
+        self.sync_pydio()
         return None, None
 
     def do_inference(self, file_path):
+        print("Doing inferencing..")
         image_data = open(file_path, "rb").read()
         response = requests.post(self._detection_service_url, files={"image": image_data})
+        print(response)
         if len(response.json()) > 0:
             new_temp_file_and_path, detections = self.add_bounding_box_to_img(file_path, response.json())
             pprint.pprint(response.json())
@@ -185,10 +210,11 @@ class Clunki():
             file_name = file_path.replace(self.os_incoming_path+'/', '')
             timex = str(int(time.time()))
             client.move(remote_path_from=self.webdav_incoming_path+'/'+file_name, remote_path_to=self.webdav_nodetections_path+'/'+timex+'_'+file_name)
+            self.sync_pydio()
 
     def on_created(self, event): # when file is created
         print("Got event for file %s" %event.src_path)
-        img_ext_list = ['jpg', 'gif', 'tif', 'png']
+        img_ext_list = ['jpg', 'gif', 'tif', 'png', 'jpeg']
         img_ext = event.src_path.split('.')[-1]
         if img_ext.lower() in img_ext_list:
             self.do_inference(event.src_path)
