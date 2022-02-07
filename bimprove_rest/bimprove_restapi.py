@@ -10,6 +10,11 @@ from flask import Flask, request, render_template, url_for, send_file, abort
 import os
 
 #app = Flask(__name__, static_folder='/static', static_url_path='/static')
+img_size = 960
+#model_file_name ='./best.pt'
+model_file_name = './best_yolo5l.transfer.objects365.e200.bs5.imgsz960.pt'
+#model_file_name = './allcombined_e300_is960_scratch_medium_0737nets.pt'
+
 app = Flask(__name__)
 
 DETECTION_URL = "/v1/risk_objects/"
@@ -22,7 +27,7 @@ def predict():
         image_file = request.files["image"]
         image_bytes = image_file.read()
         img = Image.open(io.BytesIO(image_bytes))
-        results = model(img, size=640)  # reduce size=320 for faster inference
+        results = model(img, size=img_size)  # reduce size=320 for faster inference
         return results.pandas().xyxy[0].to_json(orient="records")
 
 @app.route(DETECTION_URL, methods=["GET"])
@@ -41,10 +46,8 @@ if __name__ == "__main__":
     parser.add_argument("--port", default=5001, type=int, help="port number")
     args = parser.parse_args()
 
-    #model = torch.hub.load('path/to/yolov5', 'custom', path='path/to/best.pt', source='local')
-    #model = torch.hub.load("ultralytics/yolov5", "yolov5s", force_reload=True)  # force_reload to recache
-    #model = torch.load("best.pt")
-    #model = torch.hub.load("ultralytics/yolov5", 'custom', path='./yolov5m.pt').to('cpu')
-    model = torch.hub.load("ultralytics/yolov5", 'custom', path='./best.pt').to('cpu')
+    #Use GPU if available on your environment
+    #model = torch.hub.load("ultralytics/yolov5", 'custom', path=model_file_name).to('gpu')
+    model = torch.hub.load("ultralytics/yolov5", 'custom', path=model_file_name).to('cpu')
 
     app.run(host="0.0.0.0", port=args.port)  # debug=True causes Restarting with stat
