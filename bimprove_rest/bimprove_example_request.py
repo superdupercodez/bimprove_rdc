@@ -4,7 +4,7 @@ import pprint
 import requests
 
 DETECTION_URL = "http://localhost:5001/v1/risk_objects/"
-TEST_IMAGE = "20.jpg"
+TEST_IMAGE = "madrid_test_image.jpg"
 
 image_data = open(TEST_IMAGE, "rb").read()
 

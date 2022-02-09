@@ -9,9 +9,8 @@ from PIL import Image
 from flask import Flask, request, render_template, url_for, send_file, abort
 import os
 
-#app = Flask(__name__, static_folder='/static', static_url_path='/static')
 img_size = 960
-#model_file_name ='./best.pt'
+#model_file_name ='./yolov5_test.pt'
 model_file_name = './best_yolo5l.transfer.objects365.e200.bs5.imgsz960.pt'
 #model_file_name = './allcombined_e300_is960_scratch_medium_0737nets.pt'
 
