@@ -1,4 +1,0 @@
-#!/bin/bash
-curl -iX POST 'http://localhost:8084/fusekiQueryData' -H 'Content-Type: text/plain' -d 'SELECT ?imageId ?riskRelatedObject ?confidence ?xmax ?xmin ?ymax ?ymin ?imageURL ?anchorBoxImageURL WHERE{ ?imageId <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.semanticweb.org/safetyOntology#Image>. ?imageId <http://www.semanticweb.org/safetyOntology#hasRiskRelatedObject> ?riskRelatedObject. ?imageId <http://www.semanticweb.org/safetyOntology#hasConfidence> ?confidence. ?imageId <http://www.semanticweb.org/safetyOntology#hasXmax> ?xmax. ?imageId <http://www.semanticweb.org/safetyOntology#hasXmin> ?xmin. ?imageId <http://www.semanticweb.org/safetyOntology#hasYmax> ?ymax. ?imageId <http://www.semanticweb.org/safetyOntology#hasYmin> ?ymin. ?imageId <http://www.semanticweb.org/safetyOntology#hasImageURL> ?imageURL. ?imageId <http://www.semanticweb.org/safetyOntology#hasAnchorBoxImageURL> ?anchorBoxImageURL}'
-
-
