@@ -11,8 +11,7 @@ import os
 
 img_size = 960
 #model_file_name ='./yolov5_test.pt'
-model_file_name = './best_yolo5l.transfer.objects365.e200.bs5.imgsz960.pt'
-#model_file_name = './allcombined_e300_is960_scratch_medium_0737nets.pt'
+model_file_name = './all_combined.e200.is960.freeze.adamw.autobatch.ft.pt'
 
 app = Flask(__name__)
 
