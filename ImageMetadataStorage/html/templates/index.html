@@ -1,0 +1,215 @@
+
+
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+
+/* Header/Logo Title */
+.header {
+  padding: 30px;
+  text-align: center;
+  background: #1abc9c;
+  color: white;
+  font-size: 20px;
+}
+
+.btn-group button {
+  background: linear-gradient(to bottom, #5592bb 0%, #327cad 66%, #1C6EA4 100%);
+  border: 1px solid green; /* Green border */
+  solid #AAAAAA; padding: 15px 15px; font-size: 18px; font-weight: bold; color: #ffffff; border-left: 2px solid #D0E4F5
+  color: white; /* White text */
+  padding: 10px 24px; /* Some padding */
+  cursor: pointer; /* Pointer/hand icon */
+  margin-top: 30px;
+
+}
+
+/* Clear floats (clearfix hack) */
+.btn-group:after {
+  content: "";
+  clear: both;
+  display: table;
+}
+
+.btn-group button:not(:last-child) {
+  border-right: none; /* Prevent double borders */
+}
+
+/* Add a background color on hover */
+.btn-group button:hover {
+  background-color: #3e8e41;
+}
+
+.b1 {
+  margin-left: 30px;
+
+}
+
+.red-box {
+  background-color: #ff6161;
+}
+
+#images {
+  font-family: Arial, Helvetica, sans-serif;
+  border-collapse: collapse;
+  width: 60%;
+  margin-left: 30px;
+}
+
+#images td, #images th {
+  border: 1px solid #ddd;
+  padding: 8px;
+
+}
+
+#images tr:nth-child(even){background-color: #f2f2f2;}
+
+#images tr:hover {background-color: #ddd;}
+
+#images th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  text-align: left;
+   background: linear-gradient(to bottom, #5592bb 0%, #327cad 66%, #1C6EA4 100%);
+  color: white;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+
+  <p>Safety factor and risk detection results</p>
+</div>
+<br><br><br>
+
+
+<table id="images">
+  <thead>
+    <tr>
+      <th>Image Id </th>
+      <th>Risk related object</th>
+      <th>Confidence</th>
+      <th>xmax</th>
+      <th>xmin</th>
+      <th>ymax</th>
+      <th>ymin</th>
+      <th>Image URL</th>
+      <th>Image URL with anchor box</th>
+
+    </tr>
+  </thead>
+  <tbody id="holeTableBody"></tbody>
+</table>
+
+
+</body>
+<script type="text/javascript">
+
+queryFuseki();
+sortTable();
+
+  /* Implements the required SPARQL query to retrieve needed data from the Fuseki dataspace */
+function queryFuseki() {
+
+       //var url = "http://fasolt4.willab.fi:8084/fusekiQueryData";
+       var url = "http://localhost:8084/fusekiQueryData";
+       var http = new XMLHttpRequest();
+       var queryResult;
+	   
+       /* The stored data utilizes the safety ontology namespaces and concepts and terms  */
+       var queryStatement = "SELECT ?imageId ?riskRelatedObject ?confidence ?xmax ?xmin ?ymax ?ymin ?imageURL ?anchorBoxImageURL WHERE{ ?uuid <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.semanticweb.org/safetyOntology#Image>. ?uuid <http://www.semanticweb.org/safetyOntology#hasImageId> ?imageId. ?uuid <http://www.semanticweb.org/safetyOntology#hasRiskRelatedObject> ?riskRelatedObject. ?uuid <http://www.semanticweb.org/safetyOntology#hasConfidence> ?confidence. ?uuid <http://www.semanticweb.org/safetyOntology#hasXmax> ?xmax. ?uuid <http://www.semanticweb.org/safetyOntology#hasXmin> ?xmin. ?uuid <http://www.semanticweb.org/safetyOntology#hasYmax> ?ymax. ?uuid <http://www.semanticweb.org/safetyOntology#hasYmin> ?ymin. ?uuid <http://www.semanticweb.org/safetyOntology#hasImageURL> ?imageURL. ?uuid <http://www.semanticweb.org/safetyOntology#hasAnchorBoxImageURL> ?anchorBoxImageURL}";
+
+        http.open("POST", url, false);
+        http.setRequestHeader('Content-Type', 'text/plain; charset=ISO-8859-1');
+        http.onreadystatechange = function(){
+                if(http.readyState == 4 && http.status == 200) {
+                        var obj = JSON.parse(http.responseText);
+                        for (var key in obj.bindings) {
+
+                            const id = obj.bindings[key].imageId.value.substring(obj.bindings[key].imageId.value.indexOf("#")+1);
+                            const items1 = [
+                            { id: id, hasRiskRelatedObject: obj.bindings[key].riskRelatedObject.value, hasConfidence: obj.bindings[key].confidence.value, hasXmax: obj.bindings[key].xmax.value, hasXmin:obj.bindings[key].xmin.value, hasYmax:obj.bindings[key].ymax.value, hasYmin:obj.bindings[key].ymin.value, hasimageURL:obj.bindings[key].imageURL.value, hasAnchorBoxImageURL:obj.bindings[key].anchorBoxImageURL.value}];
+                            /* Query results are passed to the function that creates the HTML table   */
+							loadTableData(items1);
+                        }
+        console.log(http.responseText);
+
+                }
+        }
+        http.send(queryStatement);
+}
+
+
+/* Defines the table that shows the contents of the database in an HTML table   */
+function loadTableData(items) {
+    const table = document.getElementById("holeTableBody");
+    items.forEach( item => {
+      let row = table.insertRow();
+      let id = row.insertCell(0);
+      id.innerHTML = item.id;
+      let hasRiskRelatedObject = row.insertCell(1);
+      hasRiskRelatedObject.innerHTML = item.hasRiskRelatedObject;
+      let hasConfidence = row.insertCell(2);
+      hasConfidence.innerHTML = Number( parseFloat(item.hasConfidence).toFixed(3) );
+      let hasXmax = row.insertCell(3);
+      hasXmax.innerHTML = Number( parseFloat(item.hasXmax).toFixed(3) );
+      let hasXmin = row.insertCell(4);
+      hasXmin.innerHTML = Number( parseFloat(item.hasXmin).toFixed(3) );
+      let hasYmax = row.insertCell(5);
+      hasYmax.innerHTML = Number( parseFloat(item.hasYmax).toFixed(3) );
+      let hasYmin = row.insertCell(6);
+      hasYmin.innerHTML = Number( parseFloat(item.hasYmin).toFixed(3) );
+      let hasimageURL = row.insertCell(7);
+      hasimageURL.innerHTML = "<a href="+item.hasimageURL+">Image</a>";
+      let hasAnchorBoxImageURL = row.insertCell(8);
+      hasAnchorBoxImageURL.innerHTML = "<a href="+item.hasAnchorBoxImageURL+">Image with anchor box</a>";
+
+    });
+}
+
+/* Sorts the table items according to the Image ID  */
+function sortTable() {
+  var table, rows, switching, i, x, y, shouldSwitch;
+  table = document.getElementById("images");
+  switching = true;
+  /* Make a loop that will continue until
+  no switching has been done: */
+  while (switching) {
+    // Start by saying: no switching is done:
+    switching = false;
+    rows = table.rows;
+    /* Loop through all table rows (except the
+    first, which contains table headers): */
+    for (i = 1; i < (rows.length - 1); i++) {
+      // Start by saying there should be no switching:
+      shouldSwitch = false;
+      /* Get the two elements you want to compare,
+      one from current row and one from the next: */
+      x = rows[i].getElementsByTagName("TD")[0];
+      y = rows[i + 1].getElementsByTagName("TD")[0];
+      // Check if the two rows should switch place:
+      if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+        // If so, mark as a switch and break the loop:
+        shouldSwitch = true;
+        break;
+      }
+    }
+    if (shouldSwitch) {
+      /* If a switch has been marked, make the switch
+      and mark that a switch has been done: */
+      rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+      switching = true;
+    }
+  }
+}
+
+
+
+</script>
+
+
+</html>
+
+
