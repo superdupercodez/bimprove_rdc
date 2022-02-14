@@ -1,4 +1,4 @@
-# BIMPRove project's visual risk detection system
+# BIMPRove project's visual Risk Detection system Components
 
 Includes 
  - ROVAS - Risk Object Visual Analysis System for BIMProve project
