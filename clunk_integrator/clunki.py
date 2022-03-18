@@ -9,6 +9,8 @@ from watchdog.events import FileSystemEventHandler
 from webdav3.client import Client
 from PIL import Image, ImageFont, ImageDraw
 
+PYDIO_USER_PW = ''
+
 class Clunki():
     def __init__(self, **kwargs):
         self.service_host = ""
@@ -156,7 +158,7 @@ class Clunki():
 
     def sync_pydio(self):
         print("Trying to sync pydio thingy")
-        pwd='429Memfw'
+        pwd=PYDIO_USER_PW
         cmd='docker exec a4a93170a819 cells admin resync --datasource=bimprove'
         subprocess.call('echo {} | sudo -S {}'.format(pwd,cmd), shell=True)
 
