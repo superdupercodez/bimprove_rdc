@@ -4,24 +4,23 @@ import subprocess
 import glob
 import pprint
 import requests
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from webdav3.client import Client
 from PIL import Image, ImageFont, ImageDraw
 
-PYDIO_USER_PW = ''
-
 class Clunki():
     def __init__(self, **kwargs):
-        self.service_host = ""
-
-        self.fuseki_db_url = 'http://localhost:8084/fusekiAddImage'
+        self.service_host = "fasolt4.willab.fi"
+        self.image_to_bcf_url = 'http://localhost:8084/ImageToBCF'
         self._detection_service_url = "http://"+self.service_host+":5001/v1/risk_objects/"
         self._file_storage_url = "https://"+self.service_host+":8883/dav/"
         self.dav_options = {
             'webdav_hostname': self._file_storage_url,
-            'webdav_login':    "",
-            'webdav_password': "",
+            'webdav_login':    "bimuser",
+            'webdav_password': "bimproveK0ukku55",
             'verbose' : True,
             'disable_check': True
         }
@@ -61,10 +60,12 @@ class Clunki():
     def _find_file_id(self, file_name):
         if self.jwt_expiresat <= time.time():
             self._auth_with_pydio()
-        result = requests.get("http://"+self.service_host+":8883/a/tree/stat/bimprove-image-storage/processed/"+file_name, verify=False, headers=self.pydio_auth_headers)
+        file_req_url = "https://"+self.service_host+":8883/a/tree/stat/bimprove-image-storage/processed/"+file_name
         trials = 0
+        result = requests.models.Response()
         while result.status_code != 200:
-            result = requests.get("http://"+self.service_host+":8883/a/tree/stat/bimprove-image-storage/processed/"+file_name, verify=False, headers=self.pydio_auth_headers)
+            result = requests.get(file_req_url, verify=False, headers=self.pydio_auth_headers)
+            print("FFID ", file_req_url, result)
             trials+= 1
             if trials > 5:
                 break
@@ -82,10 +83,12 @@ class Clunki():
             self._auth_with_pydio()
         #Create share
         time.sleep(2)
-        result = requests.put("http://"+self.service_host+":8883/a/share/link", json=share_params, verify=False, headers=self.pydio_auth_headers)
+        file_share_req_url = "https://"+self.service_host+":8883/a/share/link"
+        result = requests.models.Response()
         trials = 0
         while result.status_code != 200:
-            result = requests.put("http://"+self.service_host+":8883/a/share/link", json=share_params, verify=False, headers=self.pydio_auth_headers)
+            result = requests.put(file_share_req_url, json=share_params, verify=False, headers=self.pydio_auth_headers)
+            print("CrFS ", file_share_req_url, result)
             trials+=1
             if trials > 5:
                 return None
@@ -97,16 +100,17 @@ class Clunki():
             print(result.text)
         return None
 
-    def insert_to_risk_db(self, file_name, new_file_name, detections):
+    def insert_to_BCF_db(self, file_name, new_file_name, detections):
         uuid = self._find_file_id(file_name)
         nf_uuid = self._find_file_id(new_file_name)
 
+        print("Attempting to insert to BCF")
+
         if uuid is not None:
-            print(f"Creating share for original file {file_name}------------------------------------------")
             file_share_url = self.create_share(file_name, uuid)
         if nf_uuid is not None:
-            print(f"Creating share for the bbox image file {new_file_name}-------------------------------------")
             new_file_share_url = self.create_share(new_file_name, nf_uuid)
+        print("Something ought to happen soon...", uuid, nf_uuid)
 
         if uuid is not None and nf_uuid is not None:
             _header = {'Content-Type': 'text/plain'}
@@ -114,9 +118,9 @@ class Clunki():
             full_new_imgUrl = full_imgUrl
 
             if file_share_url is not None:
-                full_imgUrl = str('http://'+self.service_host+':8883'+file_share_url)
+                full_imgUrl = str('https://'+self.service_host+':8883'+file_share_url)
             if new_file_share_url is not None:
-                full_new_imgUrl = str('http://'+self.service_host+':8883'+new_file_share_url)
+                full_new_imgUrl = str('https://'+self.service_host+':8883'+new_file_share_url)
 
             for detection in detections:
                 _json_content = {'imageID': str(file_name + "_" +uuid),
@@ -129,11 +133,11 @@ class Clunki():
                                  'imageURL': full_imgUrl,
                                  'anchorBoxImageURL': full_new_imgUrl}
                 print(_json_content)
-                resp = requests.post(self.fuseki_db_url, verify=False, json=_json_content, headers=_header)
+                resp = requests.post(self.image_to_bcf_url, verify=False, json=_json_content, headers=_header)
                 if resp.status_code != 200:
-                    print(f"Insertion to FUSEKI failed with {resp.status_code}:{resp.text}")
+                    print(f"Insertion to BCF failed with {resp.status_code}:{resp.text}")
                 else:
-                    print(f"Insertion to FUSEKI succeedes(?) with {resp.status_code}:{resp.text}")
+                    print(f"Insertion to BCF succeedes(?) with {resp.status_code}:{resp.text}")
 
     def add_bounding_box_to_img(self, os_file_path, detections):
         img = Image.open(os_file_path)
@@ -158,7 +162,7 @@ class Clunki():
 
     def sync_pydio(self):
         print("Trying to sync pydio thingy")
-        pwd=PYDIO_USER_PW
+        pwd='429Memfw'
         cmd='docker exec a4a93170a819 cells admin resync --datasource=bimprove'
         subprocess.call('echo {} | sudo -S {}'.format(pwd,cmd), shell=True)
 
@@ -203,8 +207,9 @@ class Clunki():
             new_temp_file_and_path, detections = self.add_bounding_box_to_img(file_path, response.json())
             pprint.pprint(response.json())
             file_name, new_file_name = self.move_files(file_path, new_temp_file_and_path)
+            print("Inference done, files moved: old name: ",file_name, " new name: ", new_file_name)
             if file_name is not None and new_file_name is not None and detections is not None:
-                self.insert_to_risk_db(file_name, new_file_name, detections)
+                self.insert_to_BCF_db(file_name, new_file_name, detections)
         #No detections - move to nodetections -folder
         else:
             client=Client(self.dav_options)
