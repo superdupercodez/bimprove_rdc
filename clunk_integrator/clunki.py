@@ -13,14 +13,14 @@ from PIL import Image, ImageFont, ImageDraw
 
 class Clunki():
     def __init__(self, **kwargs):
-        self.service_host = "fasolt4.willab.fi"
+        self.service_host = ""
         self.image_to_bcf_url = 'http://localhost:8084/ImageToBCF'
         self._detection_service_url = "http://"+self.service_host+":5001/v1/risk_objects/"
         self._file_storage_url = "https://"+self.service_host+":8883/dav/"
         self.dav_options = {
             'webdav_hostname': self._file_storage_url,
-            'webdav_login':    "bimuser",
-            'webdav_password': "bimproveK0ukku55",
+            'webdav_login':    "",
+            'webdav_password': "",
             'verbose' : True,
             'disable_check': True
         }
@@ -114,9 +114,6 @@ class Clunki():
 
         if uuid is not None and nf_uuid is not None:
             _header = {'Content-Type': 'text/plain'}
-            full_imgUrl = str("http://fasolt4.willab.fi:8883/public/943468967f2b")
-            full_new_imgUrl = full_imgUrl
-
             if file_share_url is not None:
                 full_imgUrl = str('https://'+self.service_host+':8883'+file_share_url)
             if new_file_share_url is not None:
