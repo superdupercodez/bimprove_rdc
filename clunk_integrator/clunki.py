@@ -153,7 +153,10 @@ class Clunki():
             new_full_file_name = self.os_temp_file_path + '/bbxes_' + base_file_name
             print(f"Saving {os_file_path} as new image file {new_full_file_name} - basefile name is {base_file_name}")
             #img.save(new_full_file_name, "JPEG")
-            img.save(new_full_file_name)
+	    if 'exif' in img.info.keys():
+                img.save(new_full_file_name, exif=img.info['exif'])
+            else:
+                img.save(new_full_file_name)
             return new_full_file_name, detections
         return None, None
 
