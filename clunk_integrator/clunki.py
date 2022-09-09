@@ -42,8 +42,8 @@ class Clunki():
 			}
 
         client = requests.Session()
-        user = 'bimuser'
-        password = 'bimproveK0ukku55'
+        user = '**'
+        password = '**'
 	# Login
         login_data =  {'AuthInfo': {'login': user, 'password': password, 'type': 'credentials'}}
         r = client.post("https://"+self.service_host+':8883/a/frontend/session', json=login_data, verify=False, headers=pydio_auth_req_header)
