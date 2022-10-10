@@ -8,8 +8,7 @@ import os
 DETECTION_URL = "http://localhost:5001/v1/risk_objects/"
 TEST_IMAGE = "madrid_test_image.jpg"
 
-def show_visualization(img, bounding_boxes, save=False, name=None):
-    name = os.path.basename(name)
+def show_visualization(img, bounding_boxes, save=False, name=None):   
     from PIL import Image, ImageFont, ImageDraw
     if type(img) == bytes:  
         import io
@@ -27,6 +26,7 @@ def show_visualization(img, bounding_boxes, save=False, name=None):
         draw.rectangle(((coords[0][0], coords[0][1]),(coords[0][0] + label_box[0] +5, coords[0][1] + label_box[1] + 5)), outline="yellow", fill="yellow", width=10)
         draw.text(coords[0], label_text, (0,0,0), font=font)
     if save:
+        name = os.path.basename(name)
         if 'exif' in img.info.keys():
             img.save(f"./detections/bbxes_{name}", exif=img.info['exif'])
         else:
