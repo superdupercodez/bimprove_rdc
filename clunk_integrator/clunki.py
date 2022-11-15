@@ -19,8 +19,8 @@ class Clunki():
         self._file_storage_url = "https://"+self.service_host+":8883/dav/"
         self.dav_options = {
             'webdav_hostname': self._file_storage_url,
-            'webdav_login':    "",
-            'webdav_password': "",
+            'webdav_login':    "**",
+            'webdav_password': "**",
             'verbose' : True,
             'disable_check': True
         }
@@ -162,7 +162,7 @@ class Clunki():
 
     def sync_pydio(self):
         print("Trying to sync pydio thingy")
-        pwd='429Memfw'
+        pwd='**'
         cmd='docker exec a4a93170a819 cells admin resync --datasource=bimprove'
         subprocess.call('echo {} | sudo -S {}'.format(pwd,cmd), shell=True)
 
