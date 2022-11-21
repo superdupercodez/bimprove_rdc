@@ -13,17 +13,24 @@ from PIL import Image, ImageFont, ImageDraw
 
 class Clunki():
     def __init__(self, **kwargs):
-        self.service_host = ""
+        self.service_host = "fasolt4.willab.fi"
         self.image_to_bcf_url = 'http://localhost:8084/ImageToBCF'
         self._detection_service_url = "http://"+self.service_host+":5001/v1/risk_objects/"
         self._file_storage_url = "https://"+self.service_host+":8883/dav/"
         self.dav_options = {
             'webdav_hostname': self._file_storage_url,
-            'webdav_login':    "**",
-            'webdav_password': "**",
+            'webdav_login':    "###",
+            'webdav_password': "###",
             'verbose' : True,
             'disable_check': True
         }
+        self.pydio_options = {
+            'login':  '###',
+            'password': '###'
+        }
+        self.docker_options = {
+            'password': '###'
+        }        
         self.os_incoming_path = '/var/cells/data/bimprove/incoming'
         self.os_processed_path = '/var/cells/data/bimprove/processed'
         self.os_temp_file_path = '/tmp'
@@ -42,8 +49,8 @@ class Clunki():
 			}
 
         client = requests.Session()
-        user = '**'
-        password = '**'
+        user = self.pydio_options['login']
+        password = self.pydio_options['password']
 	# Login
         login_data =  {'AuthInfo': {'login': user, 'password': password, 'type': 'credentials'}}
         r = client.post("https://"+self.service_host+':8883/a/frontend/session', json=login_data, verify=False, headers=pydio_auth_req_header)
@@ -94,6 +101,7 @@ class Clunki():
                 return None
             time.sleep(trials)
         if result.status_code == 200:
+            #This may be incorrect
             return result.json()['LinkUrl']
         else:
             print(result)
@@ -127,6 +135,8 @@ class Clunki():
                                  'xmin': str(detection['xmin']),
                                  'ymax': str(detection['ymax']),
                                  'ymin': str(detection['ymin']),
+                                 'localOrigFileName': file_name,
+                                 'localAnchorFileName': new_file_name,
                                  'imageURL': full_imgUrl,
                                  'anchorBoxImageURL': full_new_imgUrl}
                 print(_json_content)
@@ -153,7 +163,7 @@ class Clunki():
             new_full_file_name = self.os_temp_file_path + '/bbxes_' + base_file_name
             print(f"Saving {os_file_path} as new image file {new_full_file_name} - basefile name is {base_file_name}")
             #img.save(new_full_file_name, "JPEG")
-	    if 'exif' in img.info.keys():
+            if 'exif' in img.info.keys():
                 img.save(new_full_file_name, exif=img.info['exif'])
             else:
                 img.save(new_full_file_name)
@@ -162,7 +172,7 @@ class Clunki():
 
     def sync_pydio(self):
         print("Trying to sync pydio thingy")
-        pwd='**'
+        pwd=self.docker_options['password']
         cmd='docker exec a4a93170a819 cells admin resync --datasource=bimprove'
         subprocess.call('echo {} | sudo -S {}'.format(pwd,cmd), shell=True)
 
