@@ -6,16 +6,17 @@ import io
 
 import torch
 from PIL import Image
-from flask import Flask, request, render_template, url_for, send_file, abort
+from flask import Flask, Response, request, render_template, url_for, send_file, abort
 import os
 
 img_size = 960
-#model_file_name ='./yolov5_test.pt'
 model_file_name = './all_combined.e200.is960.freeze.adamw.autobatch.ft.pt'
 
 app = Flask(__name__)
 
 DETECTION_URL = "/v1/risk_objects/"
+PYDIO_INCOMING_DIR = '/var/cells/data/bimprove/incoming'
+SUPPORTED_FILE_EXTS = ['jpg', 'gif', 'tif', 'png', 'jpeg']
 
 @app.route(DETECTION_URL, methods=["POST"])
 def predict():
@@ -25,8 +26,23 @@ def predict():
         image_file = request.files["image"]
         image_bytes = image_file.read()
         img = Image.open(io.BytesIO(image_bytes))
-        results = model(img, size=img_size)  # reduce size=320 for faster inference
-        return results.pandas().xyxy[0].to_json(orient="records")
+        #print(image_file.filename, request.args, request.args['store'] == 'True')
+        if request.args and 'store' in request.args.keys() and request.args['store'] == 'True':                
+            if not os.path.isdir(PYDIO_INCOMING_DIR):
+                return Response('Path /var/cells/data/bimprove/incoming does not exist', status=500)
+            if image_file.filename == '':
+                return Response('The POST\'d filename is empty', status_code=400)
+            if image_file.filename.split('.')[-1] not in SUPPORTED_FILE_EXTS:
+                return Response(f'The only supported image formats are {SUPPORTED_FILE_EXTS}', status=400)                        
+            #Save image to '/var/cells/data/bimprove/incoming'
+            if 'exif' in img.info.keys():
+                img.save(f"/var/cells/data/bimprove/incoming/{file_name}", exif=img.info['exif'])
+            else:
+                img.save(f"/var/cells/data/bimprove/incoming/{file_name}")
+            return Response(f'{image_file.filename} file moved to processing queue, wait for a moment for the results to appear', status=200)                   
+        else:
+            results = model(img, size=img_size)  # reduce size=320 for faster inference
+            return results.pandas().xyxy[0].to_json(orient="records")
 
 @app.route(DETECTION_URL, methods=["GET"])
 def give_documentation():

@@ -41,10 +41,11 @@ parser.add_argument('--url', type=str, default=DETECTION_URL, help='Detection se
 parser.add_argument('--show', action='store_true', help='Show visualization of results')
 parser.add_argument('--save', action='store_true', help='Save results to a new file')
 parser.add_argument('--jsonsave', action='store_true', help='Save results to JSON file')
+parser.add_argument('--serverstore', action='store_true', help='Store image for server side processing and Pydio image storage')
 opt = parser.parse_args()
 
 image_data = open(opt.image, "rb").read()
-response = requests.post(opt.url, files={"image": image_data}).json()
+response = requests.post(opt.url, params=dict(store=opt.serverstore), files={"image": image_data}).json()
 pprint.pprint(response)
 if opt.show:
     show_visualization(image_data, response)
