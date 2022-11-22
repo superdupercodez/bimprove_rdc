@@ -1,2 +1,3 @@
 *.bak
-*.yaml
+config.server.yaml
+

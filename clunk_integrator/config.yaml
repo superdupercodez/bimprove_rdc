@@ -1,0 +1,26 @@
+dav_options:
+  disable_check: true
+  verbose: true
+  webdav_hostname: https://fasolt4.willab.fi:8883/dav/
+  webdav_login: '##'
+  webdav_password: '##'
+docker_options:
+  password: '##'
+host:
+  service_host: fasolt4.willab.fi
+os_paths:
+  os_incoming_path: /var/cells/data/bimprove/incoming
+  os_processed_path: /var/cells/data/bimprove/processed
+  os_temp_file_path: /tmp
+  webdav_incoming_path: bimprove-image-storage/incoming
+  webdav_nodetections_path: bimprove-image-storage/nodetections
+  webdav_processed_path: bimprove-image-storage/processed
+  webdav_temp_path: bimprove-image-storage/temp
+pydio_options:
+  login: '##'
+  password: '##'
+urls:
+  detection_service_url: http://fasolt4.willab.fi:5001/v1/risk_objects/
+  file_storage_url: https://fasolt4.willab.fi:8883/dav/
+  image_to_bcf_url: http://localhost:8084/ImageToBCF
+

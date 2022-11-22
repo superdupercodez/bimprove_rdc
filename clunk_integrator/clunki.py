@@ -16,7 +16,7 @@ from yaml.loader import SafeLoader
 class Clunki():
     def __init__(self, **kwargs):
         if os.path.exists('config.yaml'):
-            with open('config.yaml') as f:
+            with open('config.server.yaml') as f:
                 config = yaml.load(f, Loader=SafeLoader)
         else:
             exit('No config.yaml file found')
