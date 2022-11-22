@@ -4,22 +4,24 @@ import subprocess
 import glob
 import pprint
 import requests
+import yaml
+import sys
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from webdav3.client import Client
 from PIL import Image, ImageFont, ImageDraw
-import yaml
+
 from yaml.loader import SafeLoader
 
 class Clunki():
     def __init__(self, **kwargs):
-        if os.path.exists('config.yaml'):
-            with open('config.yaml') as f:
+        if os.path.exists(kwargs['config_file']):
+            with open(kwargs['config_file']) as f:
                 config = yaml.load(f, Loader=SafeLoader)
         else:
-            exit('No config.yaml file found')
+            exit(f'No {kwargs['config_file']} configuration file found')
         self.service_host = config['host']['service_host']
         self.image_to_bcf_url = config['urls']['image_to_bcf_url']
         self._detection_service_url = config['urls']['detection_service_url']
@@ -241,7 +243,11 @@ class Clunki():
         print("..clonk")
 
 if __name__ == "__main__":
-    clunk = Clunki()
+    if len(sys.argv) > 1:
+        config_file = sys.argv[1]
+    else:
+        config_file = 'config.yaml'
+    clunk = Clunki(config_file=config_file)
     print("Clunketi clunk..")
     clunk.start_file_observer()
     try:
