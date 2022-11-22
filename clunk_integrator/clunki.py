@@ -21,7 +21,8 @@ class Clunki():
             with open(kwargs['config_file']) as f:
                 config = yaml.load(f, Loader=SafeLoader)
         else:
-            exit(f'No {kwargs['config_file']} configuration file found')
+            exit(f"No {kwargs['config_file']} configuration file found")
+
         self.service_host = config['host']['service_host']
         self.image_to_bcf_url = config['urls']['image_to_bcf_url']
         self._detection_service_url = config['urls']['detection_service_url']
