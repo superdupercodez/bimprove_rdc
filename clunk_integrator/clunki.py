@@ -10,6 +10,8 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from webdav3.client import Client
 from PIL import Image, ImageFont, ImageDraw
+import yaml
+from yaml.loader import SafeLoader
 
 class Clunki():
     def __init__(self, **kwargs):
