@@ -20,55 +20,20 @@ class Clunki():
                 config = yaml.load(f, Loader=SafeLoader)
         else:
             exit('No config.yaml file found')
-
         self.service_host = config['host']['service_host']
-        #self.service_host = "fasolt4.willab.fi"
         self.image_to_bcf_url = config['urls']['image_to_bcf_url']
-        #self.image_to_bcf_url = 'http://localhost:8084/ImageToBCF'
         self._detection_service_url = config['urls']['detection_service_url']
-        #self._detection_service_url = "http://"+self.service_host+":5001/v1/risk_objects/"
         self._file_storage_url = config['urls']['file_storage_url']
-        #self._file_storage_url = "https://"+self.service_host+":8883/dav/"
         self.dav_options = config['dav_options']
-        '''
-        self.dav_options = {
-            'webdav_hostname': self._file_storage_url,
-            'webdav_login':    "###",
-            'webdav_password': "###",
-            'verbose' : True,
-            'disable_check': True
-        }
-        '''
         self.pydio_options = config['pydio_options']
-        '''
-        self.pydio_options = {
-            'login':  '###',
-            'password': '###'
-        }
-        '''
         self.docker_options = config['docker_options']
-        '''
-        self.docker_options = {
-            'password': '###'
-        }
-        '''
         self.os_incoming_path = config['os_paths']['os_incoming_path']
         self.os_processed_path = config['os_paths']['os_processed_path']
         self.os_temp_file_path = config['os_paths']['os_temp_file_path']
         self.webdav_incoming_path = config['os_paths']['webdav_incoming_path']
         self.webdav_processed_path = config['os_paths']['webdav_processed_path']
         self.webdav_temp_path = config['os_paths']['webdav_temp_path']
-        self.webdav_nodetections_path = config['os_paths']['webdav_nodetections_path']
-        '''
-        self.os_incoming_path = '/var/cells/data/bimprove/incoming'
-        self.os_processed_path = '/var/cells/data/bimprove/processed'
-        self.os_temp_file_path = '/tmp'
-        self.webdav_incoming_path = 'bimprove-image-storage/incoming'
-        self.webdav_processed_path = 'bimprove-image-storage/processed'
-        self.webdav_temp_path = 'bimprove-image-storage/temp'
-        self.webdav_nodetections_path = 'bimprove-image-storage/nodetections'
-        '''
-        
+        self.webdav_nodetections_path = config['os_paths']['webdav_nodetections_path']       
         self.jwt_expiresat = time.time()
 
     def _auth_with_pydio(self):
