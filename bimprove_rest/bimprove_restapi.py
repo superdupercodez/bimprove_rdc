@@ -3,11 +3,11 @@ Run a rest API exposing the yolov5s object detection model
 """
 import argparse
 import io
-
 import torch
 from PIL import Image
 from flask import Flask, Response, request, render_template, url_for, send_file, abort
 import os
+import time
 
 img_size = 960
 model_file_name = './all_combined.e200.is960.freeze.adamw.autobatch.ft.pt'
@@ -26,20 +26,22 @@ def predict():
         image_file = request.files["image"]
         image_bytes = image_file.read()
         img = Image.open(io.BytesIO(image_bytes))
-        #print(image_file.filename, request.args, request.args['store'] == 'True')
-        if request.args and 'store' in request.args.keys() and request.args['store'] == 'True':                
+        if request.args and 'store' in request.args.keys() and request.args['store'] == 'True':
+            if 'origfname' in request.args.keys():
+                origfname = request.args['origfname']
+            else:
+                origfname = 'unnamed_image_' + str(int(time.time())) + '.jpg'
             if not os.path.isdir(PYDIO_INCOMING_DIR):
                 return Response('Path /var/cells/data/bimprove/incoming does not exist', status=500)
-            if image_file.filename == '':
-                return Response('The POST\'d filename is empty', status_code=400)
-            if image_file.filename.split('.')[-1] not in SUPPORTED_FILE_EXTS:
-                return Response(f'The only supported image formats are {SUPPORTED_FILE_EXTS}', status=400)                        
+            if origfname.split('.')[-1] not in SUPPORTED_FILE_EXTS:
+                print("Crash here", image_file.filename)
+                return Response(f'The only supported image formats are {SUPPORTED_FILE_EXTS}', status=400)
             #Save image to '/var/cells/data/bimprove/incoming'
             if 'exif' in img.info.keys():
-                img.save(f"/var/cells/data/bimprove/incoming/{file_name}", exif=img.info['exif'])
+                img.save(f"/var/cells/data/bimprove/incoming/{origfname}", exif=img.info['exif'])
             else:
-                img.save(f"/var/cells/data/bimprove/incoming/{file_name}")
-            return Response(f'{image_file.filename} file moved to processing queue, wait for a moment for the results to appear', status=200)                   
+                img.save(f"/var/cells/data/bimprove/incoming/{origfname}")
+            return Response(f'{origfname} file moved to processing queue, wait for a moment for the results to appear', status=200)                   
         else:
             results = model(img, size=img_size)  # reduce size=320 for faster inference
             return results.pandas().xyxy[0].to_json(orient="records")
@@ -63,5 +65,4 @@ if __name__ == "__main__":
     #Use GPU if available on your environment
     #model = torch.hub.load("ultralytics/yolov5", 'custom', path=model_file_name).to('gpu')
     model = torch.hub.load("ultralytics/yolov5", 'custom', path=model_file_name).to('cpu')
-
     app.run(host="0.0.0.0", port=args.port)  # debug=True causes Restarting with stat

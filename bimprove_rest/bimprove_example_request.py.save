@@ -1,4 +1,6 @@
 """Perform test request"""
+import logging
+
 import pprint
 import argparse
 import requests
@@ -44,8 +46,17 @@ parser.add_argument('--serverstore', action='store_true', help='Store image for 
 opt = parser.parse_args()
 
 image_data = open(opt.image, "rb").read()
-response = requests.post(opt.url, params=dict(store=opt.serverstore, origfname=opt.image), files=dict(image=image_data))
-print("Server responds: ", response, response.reason, response.text)
+
+logging.basicConfig()
+logging.getLogger().setLevel(logging.DEBUG)
+requests_log = logging.getLogger("requests.packages.urllib3")
+requests_log.setLevel(logging.DEBUG)
+requests_log.propagate = True
+
+response = requests.post(opt.url, params=dict(store=opt.serverstore), files=dict(image=image_data))
+print(response, resp)
+exit()
+
 pprint.pprint(response)
 if opt.show:
     show_visualization(image_data, response)
