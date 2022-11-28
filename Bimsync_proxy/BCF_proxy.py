@@ -166,12 +166,14 @@ class addImageData(tornado.web.RequestHandler):
 
     async def post(self):
         request_path = self.request.path
+        client_id = ""
+        client_secret = ""
         try:
             payload = self.request.body.decode('utf-8')
             jsonUpdate = json.loads(payload)
-            ACCESS_TOKEN = get_access_token("e3MLbLz5LCDlMls", "DMBxORv9iNQDDJC")
+            ACCESS_TOKEN = get_access_token(client_id, client_secret)
             issue_board_id = "3f41f1bf7bd3430792a6d008edc6895b"
-            #create topic
+            #create topicclient_id
             topicAnswer = createBCFTopic(ACCESS_TOKEN, issue_board_id, "ImageId_" + jsonUpdate["imageID"], "Detected object: " +  jsonUpdate["name"] +", confidence: " + jsonUpdate["confidence"])
             topicGuid = topicAnswer.json()["guid"]
             #create viewpoint
